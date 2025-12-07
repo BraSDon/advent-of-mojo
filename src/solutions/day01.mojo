@@ -1,17 +1,20 @@
 from testing import assert_equal, assert_true
 from read import read
 
-def main():
+fn main() raises:
     var input = read(1)
     var example = read(1, True)
 
-    assert_equal(part_one(example), 3)
-    assert_equal(part_one(input), 962)
+    var parsed_input = parse_input(input.value())
+    var parsed_example = parse_input(example.value())
 
-    assert_equal(part_two(example), 6)
-    assert_equal(part_two(input), 5782)
+    assert_equal(part_one(parsed_example), 3)
+    assert_equal(part_one(parsed_input), 962)
 
-def parse_input(input: List[String]) -> List[Int]:
+    assert_equal(part_two(parsed_example), 6)
+    assert_equal(part_two(parsed_input), 5782)
+
+fn parse_input(input: List[String]) raises -> List[Int]:
     var parsed = List[Int]()
     for line in input:
         var direction = -1 if line[0] == "L" else 1
@@ -19,12 +22,7 @@ def parse_input(input: List[String]) -> List[Int]:
         parsed.append(direction * steps)
     return parsed^
 
-fn part_one(input: List[String]) -> Int:
-    var parsed = List[Int]()
-    try:
-        parsed = parse_input(input)
-    except _:
-        print("Invalid input")
+fn part_one(parsed: List[Int]) -> Int:
     var zeros = 0
     var current = 50
     for step in parsed:
@@ -33,12 +31,7 @@ fn part_one(input: List[String]) -> Int:
             zeros += 1
     return zeros
 
-fn part_two(input: List[String]) -> Int:
-    var parsed = List[Int]()
-    try:
-        parsed = parse_input(input)
-    except _:
-        print("Invalid input")
+fn part_two(parsed: List[Int]) -> Int:
     var zeros = 0
     var current = 50
     for step in parsed:

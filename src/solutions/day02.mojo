@@ -1,5 +1,6 @@
 from testing import assert_equal, assert_true
 from read import read
+from collections import Set
 
 fn main() raises:
     var input = read(2)
@@ -11,11 +12,8 @@ fn main() raises:
     assert_equal(part_one(parsed_example), 1227775554)
     assert_equal(part_one(parsed_input), 32976912643)
 
-    # assert_equal(part_two(parsed_example), 6)
-    # assert_equal(part_two(parsed_input), 5782)
-
-fn same_length(x: Int, y: Int) -> Bool:
-    return len(String(x)) == len(String(y))
+    assert_equal(part_two(parsed_example), 4174379265)
+    assert_equal(part_two(parsed_input), 54446379122)
 
 @fieldwise_init
 struct Range(Copyable, Movable, ImplicitlyCopyable, Stringable):
@@ -54,6 +52,8 @@ struct Range(Copyable, Movable, ImplicitlyCopyable, Stringable):
     fn contains(self, x: Int) -> Bool:
         return self.start <= x <= self.end
 
+fn same_length(x: Int, y: Int) -> Bool:
+    return len(String(x)) == len(String(y))
 
 fn parse_input(input: List[String]) raises -> List[Range]:
     var parsed = List[Range]()
@@ -68,6 +68,17 @@ fn parse_input(input: List[String]) raises -> List[Range]:
 
     return parsed^
 
+fn split_ranges(input: List[Range]) -> List[Range]:
+    var ranges = List[Range]()
+    for r in input:
+        ranges.extend(r.split())
+    return ranges^
+
+fn sum_set(nums: Set[Int]) -> Int:
+    var sum = 0
+    for n in nums:
+        sum += n
+    return sum
 
 fn part_one(input: List[Range]) raises -> Int:
     # 1. Turn into sub-ranges, that all satisfy the invariant
@@ -75,34 +86,43 @@ fn part_one(input: List[Range]) raises -> Int:
     # 3. For each range, take first half of digits (s), check if (ss) is in range
     #    If yes, then take (s+1) and check if (s+1)(s+1) is in range etc...
 
-    # 1.
-    var ranges = List[Range]()
-    for r in input:
-        ranges.extend(r.split())
+    var ranges = split_ranges(input)
     for r in ranges:
         assert_true(same_length(r.start, r.end))
 
-    # 2.
     var filtered = [r for r in ranges if r.even()]
 
+    var nums = Set[Int]()
     for r in filtered:
-        print(r.__str__())
+        nums |= invalid_ids(2, r)
 
-    # 3.
-    var sum = 0
-    for r in filtered:
-      var str = String(r.start)
-      var half = str[:len(str) // 2]
-      var x = Int(half)
-      while True:
-          var potential_invalid = Int(half + half)
-          if potential_invalid > r.end:
-              break
-          if potential_invalid >= r.start:
-              sum += potential_invalid
-          half = String(Int(half) + 1)
+    return sum_set(nums)
 
-    return sum
+fn part_two(input: List[Range]) raises -> Int:
+    var ranges = split_ranges(input)
 
-fn part_two(input: List[Range]) -> Int:
-    return 0
+    var nums = Set[Int]()
+    for r in ranges:
+        for ratio in range(2, len(String(r.start)) + 1):
+            if len(String(r.start)) % ratio != 0:
+                continue
+            nums |= invalid_ids(ratio, r)
+
+    return sum_set(nums)
+
+fn invalid_ids(ratio: Int, r: Range) raises -> Set[Int]:
+    var nums = Set[Int]()
+    var str = String(r.start)
+    var sequence = str[:len(str) // ratio]
+    var seq_len = len(sequence)
+    var x = Int(sequence)
+    while len(sequence) <= seq_len:
+      var s = sequence * ratio
+      var potential_invalid = Int(s)
+      if potential_invalid > r.end:
+          break
+      if potential_invalid >= r.start:
+          nums.add(potential_invalid)
+      sequence = String(Int(sequence) + 1)
+
+    return nums^

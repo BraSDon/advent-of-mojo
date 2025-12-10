@@ -9,10 +9,10 @@ fn main() raises:
     var parsed_example = parse_input(example.value())
 
     assert_equal(part_one(parsed_example), 357)
-    assert_equal(part_one(parsed_input), 962)
+    assert_equal(part_one(parsed_input), 17332)
 
-    # assert_equal(part_two(parsed_example), 6)
-    # assert_equal(part_two(parsed_input), 5782)
+    assert_equal(part_two(parsed_example), 3121910778619)
+    assert_equal(part_two(parsed_input), 172516781546707)
 
 alias Bank = List[Int]
 
@@ -25,6 +25,17 @@ fn parse_input(input: List[String]) raises -> List[Bank]:
         banks.append(bank^)
     return banks^
 
+fn build_map(bank: Bank) raises -> Dict[Int, List[Int]]:
+    # Build map of digit -> first occurrence index
+    var map = Dict[Int, List[Int]]()
+    for i, x in enumerate(bank):
+        var found = map.find(x)
+        if found:
+            map[x].append(i)
+        else:
+            map[x] = [i]
+    return map^
+
 fn find_best_digit(map: Dict[Int, List[Int]], min_index: Int, max_index: Int) -> Tuple[Int, Int]:
     """Find largest digit (9->1) with any occurrence in [min_index, max_index)."""
     for digit in range(9, 0, -1):
@@ -35,22 +46,34 @@ fn find_best_digit(map: Dict[Int, List[Int]], min_index: Int, max_index: Int) ->
                     return (digit, pos)
     return (0, 0)
 
-fn part_one(input: List[Bank]) raises -> Int:
+fn select_digits(map: Dict[Int, List[Int]], count: Int, bank_len: Int) -> List[Int]:
+    var values = List[Tuple[Int, Int]](length=count, fill=(0, 0))
+    values[0] = find_best_digit(map, 0, bank_len  - (count - 1))
+    for i in range(1, count):
+        var min_index = values[i - 1][1] + 1
+        var max_index = bank_len - (count - 1 - i)
+        values[i] = find_best_digit(map, min_index, max_index)
+    var result = List[Int]()
+    for v in values:
+        result.append(v[0])
+    return result^
+
+fn digits_to_number(digits: List[Int]) raises -> Int:
+    var s = String()
+    for d in digits:
+        s += String(d)
+    return atol(s)
+
+fn solve(input: List[Bank], count: Int) raises -> Int:
     var sum = 0
     for bank in input:
-        # Build map of digit -> first occurrence index
-        var map = Dict[Int, List[Int]]()
-        for i, x in enumerate(bank):
-            if not map.find(x):
-                map[x] = [i]
-            else:
-                map[x].append(i)
-
-        # First digit can't be at last position (need room for second digit)
-        var first = find_best_digit(map, 0, len(bank) - 1)
-        # Second digit must come after first
-        var second = find_best_digit(map, first[1] + 1, len(bank))
-
-        sum += first[0] * 10 + second[0]
+        var map = build_map(bank)
+        sum += digits_to_number(select_digits(map, count, len(bank)))
     return sum
+
+fn part_one(input: List[Bank]) raises -> Int:
+    return solve(input, 2)
+
+fn part_two(input: List[Bank]) raises -> Int:
+    return solve(input, 12)
 

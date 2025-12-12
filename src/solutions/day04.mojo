@@ -62,25 +62,6 @@ struct Grid(Stringable, Copyable, Movable):
                     count += 1
         return count
 
-    fn __eq__(self, other: Grid) -> Bool:
-        for y in range(len(self.cells)):
-            for x in range(len(self.cells[y])):
-                if self.cells[y][x] != other.cells[y][x]:
-                    return False
-        return True
-
-    fn __ne__(self, other: Grid) -> Bool:
-        return not self.__eq__(other)
-
-    fn __sub__(self, other: Grid) -> Grid:
-        var result_cells = List[List[Bool]]()
-        for y in range(len(self.cells)):
-            var row = List[Bool]()
-            for x in range(len(self.cells[y])):
-                row.append(self.cells[y][x] and not other.cells[y][x])
-            result_cells.append(row^)
-        return Grid(cells=result_cells^)
-
     fn __str__(self) -> String:
         var lines = List[String]()
         for row in self.cells:
@@ -90,6 +71,17 @@ struct Grid(Stringable, Copyable, Movable):
             lines.append(line)
         return "\n".join(lines^)
 
+    fn clean(mut self) -> Bool:
+        var changed = False
+        for y in range(len(self.cells)):
+            for x in range(len(self.cells[y])):
+                var new = self.cells[y][x] and self.true_neighbors(x, y) >= 4
+                if not changed and (new != self.cells[y][x]):
+                    changed = True
+                self.cells[y][x] = new
+        return changed
+
+
 fn part_one(input: List[String]) raises -> Int:
     var parsed = Grid(input)
     return parsed.moveable().elements()
@@ -97,9 +89,6 @@ fn part_one(input: List[String]) raises -> Int:
 fn part_two(input: List[String]) raises -> Int:
     var parsed = Grid(input)
     var start_elements = parsed.elements()
-    var prev = parsed.copy()
-    var current = parsed - parsed.moveable()
-    while prev != current:
-        prev = current^
-        current = prev - prev.moveable()
-    return start_elements - current.elements()
+    while parsed.clean():
+        pass
+    return start_elements - parsed.elements()

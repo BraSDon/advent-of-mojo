@@ -13,7 +13,8 @@ fn read(day: Int, example: Bool = False) -> Optional[List[String]]:
         with open(path, "r") as f:
             var lines = f.read().split("\n")
             for line in lines:
-                content.append(String(line))
+                if len(line) > 0:
+                    content.append(String(line))
     except e:
         print("Error reading file:", e)
         return Optional[List[String]](None)

@@ -32,6 +32,6 @@ fn bench_part[
         _ = keep(func(input))
 
     var unit = Unit.ms
-    var report = run[wrapper](max_iters=10)
+    var report = run[wrapper](max_iters=50)
     var mean = report.mean(Unit.ms)
     print("  Part {}: {} {}".format(part, mean.__round__(4), unit))

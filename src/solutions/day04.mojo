@@ -14,21 +14,30 @@ fn main() raises:
 @fieldwise_init
 struct Grid(Stringable, Copyable, Movable):
     var cells: List[List[Bool]]
+    var width: Int
+    var height: Int
 
-    @implicit
-    fn __init__(out self, input: List[String]) raises:
+    fn __init__(out self, width: Int, height: Int):
+        self.width = width
+        self.height = height
         self.cells = List[List[Bool]]()
-        for line in input:
-            var row = List[Bool]()
-            for char in line.codepoints():
-                row.append(char == Codepoint.ord("@"))
-            self.cells.append(row^)
-        self._assert_rectangular()
 
-    fn _assert_rectangular(self) raises -> None:
-        var row_length = len(self.cells[0])
-        for row in self.cells:
-            assert_equal(len(row), row_length)
+        for _ in range(height + 2):
+            var row = List[Bool]()
+            for _ in range(width + 2):
+                row.append(False)
+            self.cells.append(row^)
+
+    fn __init__(out self, input: List[String]) raises:
+        var h = len(input)
+        var w = len(input[0]) if h > 0 else 0
+        self = self.__init__(width=w, height=h)
+
+        for y in range(h):
+            var line = input[y]
+            for x in range(w):
+                if line[x] == "@":
+                    self[y, x] = True
 
     fn true_neighbors(self, x: Int, y: Int) -> Int:
         # Returns the number of adjacent True cells (up, down, left, right, diagonals)
@@ -39,20 +48,18 @@ struct Grid(Stringable, Copyable, Movable):
         ]
         count = 0
         for (nx, ny) in adjacent_coords:
-            if 0 <= nx < len(self.cells[ny]) and 0 <= ny < len(self.cells):
-                if self.cells[ny][nx]:
-                    count += 1
+            if self[ny, nx]:
+                count += 1
         return count
 
     fn moveable(self) -> Grid:
-        # Returns a grid indicating which cells are moveable (i.e. have less than 4 adjacent True cells)
-        var moveable_cells = List[List[Bool]]()
-        for y in range(len(self.cells)):
-            var row = List[Bool]()
-            for x in range(len(self.cells[y])):
-                row.append(self.true_neighbors(x, y) < 4 and self.cells[y][x])
-            moveable_cells.append(row^)
-        return Grid(cells=moveable_cells^)
+        var res = Grid(width=self.width, height=self.height)
+
+        for y in range(self.height):
+            for x in range(self.width):
+                if self[y, x] and self.true_neighbors(x, y) < 4:
+                    res[y, x] = True
+        return res^
 
     fn elements(self) -> Int:
         var count = 0
@@ -61,6 +68,12 @@ struct Grid(Stringable, Copyable, Movable):
                 if cell:
                     count += 1
         return count
+
+    fn __getitem__(self, row: Int, col: Int) -> Bool:
+        return self.cells[row + 1][col + 1]
+
+    fn __setitem__(mut self, row: Int, col: Int, value: Bool):
+        self.cells[row + 1][col + 1] = value
 
     fn __str__(self) -> String:
         var lines = List[String]()
@@ -73,12 +86,12 @@ struct Grid(Stringable, Copyable, Movable):
 
     fn clean(mut self) -> Bool:
         var changed = False
-        for y in range(len(self.cells)):
-            for x in range(len(self.cells[y])):
-                var new = self.cells[y][x] and self.true_neighbors(x, y) >= 4
-                if not changed and (new != self.cells[y][x]):
+        for y in range(self.height):
+            for x in range(self.width):
+                var new = self[y, x] and self.true_neighbors(x, y) >= 4
+                if not changed and (new != self[y, x]):
                     changed = True
-                self.cells[y][x] = new
+                self[y, x] = new
         return changed
 
 

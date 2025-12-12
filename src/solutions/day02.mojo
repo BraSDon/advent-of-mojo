@@ -6,14 +6,11 @@ fn main() raises:
     var input = read(2)
     var example = read(2, True)
 
-    var parsed_input = parse_input(input.value())
-    var parsed_example = parse_input(example.value())
+    assert_equal(part_one(example.value()), 1227775554)
+    assert_equal(part_one(input.value()), 32976912643)
 
-    assert_equal(part_one(parsed_example), 1227775554)
-    assert_equal(part_one(parsed_input), 32976912643)
-
-    assert_equal(part_two(parsed_example), 4174379265)
-    assert_equal(part_two(parsed_input), 54446379122)
+    assert_equal(part_two(example.value()), 4174379265)
+    assert_equal(part_two(input.value()), 54446379122)
 
 @fieldwise_init
 struct Range(Copyable, Movable, ImplicitlyCopyable, Stringable):
@@ -80,13 +77,13 @@ fn sum_set(nums: Set[Int]) -> Int:
         sum += n
     return sum
 
-fn part_one(input: List[Range]) raises -> Int:
+fn part_one(input: List[String]) raises -> Int:
     # 1. Turn into sub-ranges, that all satisfy the invariant
     # 2. Get rid of ranges where digits(start) % 2 != 0
     # 3. For each range, take first half of digits (s), check if (ss) is in range
     #    If yes, then take (s+1) and check if (s+1)(s+1) is in range etc...
-
-    var ranges = split_ranges(input)
+    var parsed = parse_input(input)
+    var ranges = split_ranges(parsed)
     for r in ranges:
         assert_true(same_length(r.start, r.end))
 
@@ -98,8 +95,9 @@ fn part_one(input: List[Range]) raises -> Int:
 
     return sum_set(nums)
 
-fn part_two(input: List[Range]) raises -> Int:
-    var ranges = split_ranges(input)
+fn part_two(input: List[String]) raises -> Int:
+    var parsed = parse_input(input)
+    var ranges = split_ranges(parsed)
 
     var nums = Set[Int]()
     for r in ranges:

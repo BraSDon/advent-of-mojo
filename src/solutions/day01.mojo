@@ -5,14 +5,11 @@ fn main() raises:
     var input = read(1)
     var example = read(1, True)
 
-    var parsed_input = parse_input(input.value())
-    var parsed_example = parse_input(example.value())
+    assert_equal(part_one(example.value()), 3)
+    assert_equal(part_one(input.value()), 962)
 
-    assert_equal(part_one(parsed_example), 3)
-    assert_equal(part_one(parsed_input), 962)
-
-    assert_equal(part_two(parsed_example), 6)
-    assert_equal(part_two(parsed_input), 5782)
+    assert_equal(part_two(example.value()), 6)
+    assert_equal(part_two(input.value()), 5782)
 
 fn parse_input(input: List[String]) raises -> List[Int]:
     var parsed = List[Int]()
@@ -22,7 +19,8 @@ fn parse_input(input: List[String]) raises -> List[Int]:
         parsed.append(direction * steps)
     return parsed^
 
-fn part_one(parsed: List[Int]) -> Int:
+fn part_one(input: List[String]) raises -> Int:
+    var parsed = parse_input(input)
     var zeros = 0
     var current = 50
     for step in parsed:
@@ -31,7 +29,8 @@ fn part_one(parsed: List[Int]) -> Int:
             zeros += 1
     return zeros
 
-fn part_two(parsed: List[Int]) -> Int:
+fn part_two(input: List[String]) raises -> Int:
+    var parsed = parse_input(input)
     var zeros = 0
     var current = 50
     for step in parsed:

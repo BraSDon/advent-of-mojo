@@ -5,14 +5,11 @@ fn main() raises:
     var input = read(3)
     var example = read(3, True)
 
-    var parsed_input = parse_input(input.value())
-    var parsed_example = parse_input(example.value())
+    assert_equal(part_one(example.value()), 357)
+    assert_equal(part_one(input.value()), 17332)
 
-    assert_equal(part_one(parsed_example), 357)
-    assert_equal(part_one(parsed_input), 17332)
-
-    assert_equal(part_two(parsed_example), 3121910778619)
-    assert_equal(part_two(parsed_input), 172516781546707)
+    assert_equal(part_two(example.value()), 3121910778619)
+    assert_equal(part_two(input.value()), 172516781546707)
 
 alias Bank = List[Int]
 
@@ -71,9 +68,11 @@ fn solve(input: List[Bank], count: Int) raises -> Int:
         sum += digits_to_number(select_digits(map, count, len(bank)))
     return sum
 
-fn part_one(input: List[Bank]) raises -> Int:
-    return solve(input, 2)
+fn part_one(input: List[String]) raises -> Int:
+    var parsed = parse_input(input)
+    return solve(parsed, 2)
 
-fn part_two(input: List[Bank]) raises -> Int:
-    return solve(input, 12)
+fn part_two(input: List[String]) raises -> Int:
+    var parsed = parse_input(input)
+    return solve(parsed, 12)
 

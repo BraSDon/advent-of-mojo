@@ -90,10 +90,12 @@ struct Grid(Stringable, Copyable, Movable):
             lines.append(line)
         return "\n".join(lines^)
 
-fn part_one(parsed: Grid) -> Int:
+fn part_one(input: List[String]) raises -> Int:
+    var parsed = Grid(input)
     return parsed.moveable().elements()
 
-fn part_two(parsed: Grid) -> Int:
+fn part_two(input: List[String]) raises -> Int:
+    var parsed = Grid(input)
     var start_elements = parsed.elements()
     var prev = parsed.copy()
     var current = parsed - parsed.moveable()

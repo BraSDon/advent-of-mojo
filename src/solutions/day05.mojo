@@ -9,24 +9,43 @@ fn main() raises:
     assert_equal(part_one(example.value()), 3)
     assert_equal(part_one(input.value()), 726)
 
-    # assert_equal(part_two(example.value()), 14)
-    # assert_equal(part_two(input.value()), 9144)
+    assert_equal(part_two(example.value()), 14)
+    assert_equal(part_two(input.value()), 354226555270043)
 
-fn parse(input: List[String]) raises -> Tuple[List[Interval[Int]], List[Int]]:
-    var split_index = 0
+struct IntervalWrapper(Copyable, Movable, Comparable):
+    var interval: Interval[Int]
+
+    @implicit
+    fn __init__(out self, interval: Interval[Int]):
+        self.interval = interval
+
+    fn __lt__(self, other: IntervalWrapper) -> Bool:
+        return self.interval < other.interval
+
+    fn __eq__(self, other: IntervalWrapper) -> Bool:
+        return self.interval == other.interval
+
+fn parse_ranges(input: List[String]) raises -> List[Interval[Int]]:
     var ranges = List[Interval[Int]]()
-    for i, line in enumerate(input):
+    for line in input:
         var parts = line.strip().split("-")
+        # Stop as soon as we hit the split line
+        if len(parts) != 2:
+            break
+        ranges.append(Interval[Int](atol(parts[0]), atol(parts[1]) + 1))
+    return ranges^
+
+fn parse_avail(input: List[String]) raises -> List[Int]:
+    var split_index = 0
+    for i in range(len(input)):
+        var parts = input[i].strip().split("-")
         if len(parts) != 2:
             split_index = i
             break
-        ranges.append(Interval[Int](atol(parts[0]), atol(parts[1]) + 1))
-
     var avail = List[Int]()
-    for line in input[split_index + 1:]:
-        avail.append(atol(line))
-
-    return (ranges^, avail^)
+    for i in range(split_index + 1, len(input)):
+        avail.append(atol(input[i]))
+    return avail^
 
 fn is_fresh(value: Int, ranges: List[Interval[Int]]) -> Bool:
     for r in ranges:
@@ -35,9 +54,8 @@ fn is_fresh(value: Int, ranges: List[Interval[Int]]) -> Bool:
     return False
 
 fn part_one(input: List[String]) raises -> Int:
-    var parsed = parse(input)
-    var ranges = parsed[0].copy()
-    var avail = parsed[1].copy()
+    var ranges = parse_ranges(input)
+    var avail = parse_avail(input)
 
     var count = 0
     for value in avail:
@@ -47,4 +65,28 @@ fn part_one(input: List[String]) raises -> Int:
     return count
 
 fn part_two(input: List[String]) raises -> Int:
-    return 0
+    var ranges = parse_ranges(input)
+
+    # Workaround for sorting intervals
+    var intervals = [IntervalWrapper(r) for r in ranges]
+    sort(intervals)
+    var itvs = [interval.interval for interval in intervals]
+
+    var merged = List[Interval[Int]]()
+    var current = itvs[0]
+
+    for i in range(1, len(itvs)):
+        var next = itvs[i]
+        if current.overlaps(next):
+            current = Interval(current.start, max(current.end, next.end))
+        else: 
+            merged.append(current)
+            current = next
+
+    merged.append(current)
+
+    var count = 0
+    for r in merged:
+        count += len(r)
+
+    return count

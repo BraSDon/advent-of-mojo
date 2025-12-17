@@ -6,6 +6,7 @@ import day02
 import day03
 import day04
 import day05
+import day06
 
 fn main() raises:
     run_day[day01.part_one, day01.part_two](1)
@@ -13,6 +14,7 @@ fn main() raises:
     run_day[day03.part_one, day03.part_two](3)
     run_day[day04.part_one, day04.part_two](4)
     run_day[day05.part_one, day05.part_two](5)
+    run_day[day06.part_one, day06.part_two](6)
 
 fn run_day[
     part1_fn: fn(List[String]) raises -> Int,

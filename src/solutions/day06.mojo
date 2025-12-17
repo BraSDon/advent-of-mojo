@@ -36,9 +36,8 @@ fn parse_ops(input: List[String]) raises -> List[Bool]:
     return ops^
 
 fn parse_nums_one(input: List[String]) raises -> List[List[Int]]:
-    var nums = List[List[Int]]()
-    for line in input[:-1]:
-        nums.append([atol(i) for i in line.split()])
+    var rows = [ [atol(x) for x in line.split()] for line in input[:-1] ]
+    var nums = [ [row[i] for row in rows] for i in range(len(rows[0])) ]
     return nums^
 
 fn parse_nums_two(input: List[String]) raises -> List[List[Int]]:
@@ -57,29 +56,23 @@ fn parse_nums_two(input: List[String]) raises -> List[List[Int]]:
     nums.append(problem_nums^)
     return nums^
 
-fn part_one(input: List[String]) raises -> Int:
-    var nums = parse_nums_one(input)
-    var ops = parse_ops(input)
-
-    var problems = List[Problem]()
-    for i in range(len(ops)):
-        var elements = [n[i] for n in nums]
-        problems.append(Problem(elements^, ops[i]))
-
-    var count = 0
-    for p in problems:
-        count += p.fold()
-    return count
-
-
-fn part_two(input: List[String]) raises -> Int:
-    var nums = parse_nums_two(input)
+fn parse[parse_fn: fn(List[String]) raises -> List[List[Int]]](input: List[String]) raises -> List[Problem]:
+    var nums = parse_fn(input)
     var ops = parse_ops(input)
     var problems = List[Problem]()
     for i, elems in enumerate(nums):
         problems.append(Problem(elems.copy(), ops[i]))
+    return problems^
 
+fn solve[parse_fn: fn(List[String]) raises -> List[List[Int]]](input: List[String]) raises -> Int:
+    var problems = parse[parse_fn](input)
     var count = 0
     for p in problems:
         count += p.fold()
     return count
+
+fn part_one(input: List[String]) raises -> Int:
+    return solve[parse_nums_one](input)
+
+fn part_two(input: List[String]) raises -> Int:
+    return solve[parse_nums_two](input)

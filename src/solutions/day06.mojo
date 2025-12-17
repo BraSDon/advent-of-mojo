@@ -8,8 +8,8 @@ fn main() raises:
     assert_equal(part_one(example.value()), 4277556)
     assert_equal(part_one(input.value()), 4719804927602)
 
-    # assert_equal(part_two(example.value()), 14)
-    # assert_equal(part_two(input.value()), 354226555270043)
+    assert_equal(part_two(example.value()), 3263827)
+    assert_equal(part_two(input.value()), 9608327000261)
 
 @fieldwise_init
 struct Problem(Copyable, Movable):
@@ -25,30 +25,61 @@ struct Problem(Copyable, Movable):
                 result = result + self.nums[i]
         return result
 
-fn parse(input: List[String]) raises -> List[Problem]:
-    var problems = List[Problem]()
+fn parse_ops(input: List[String]) raises -> List[Bool]:
+    var ops = List[Bool]()
+    var op_strings = input[-1].split()
+    for op in op_strings:
+        if op == "*":
+            ops.append(True)
+        elif op == "+":
+            ops.append(False)
+    return ops^
+
+fn parse_nums_one(input: List[String]) raises -> List[List[Int]]:
     var nums = List[List[Int]]()
-    var ops = input[len(input) - 1].split()
-    for i, line in enumerate(input):
-        if i == len(input) - 1:
-            break
+    for line in input[:-1]:
         nums.append([atol(i) for i in line.split()])
+    return nums^
 
-    for i in range(len(ops)):
-        var elements = [n[i] for n in nums]
-        problems.append(Problem(elements^, ops[i] == "*"))
+fn parse_nums_two(input: List[String]) raises -> List[List[Int]]:
+    var nums = List[List[Int]]()
+    var problem_nums = List[Int]()
 
-    return problems^
-
+    for col in range(len(input[0])):
+        var s = ""
+        for row in input[:-1]:
+            s += row[col]
+        if s.strip() == "":
+            nums.append(problem_nums^)
+            problem_nums = List[Int]()
+        else:
+            problem_nums.append(atol(s))
+    nums.append(problem_nums^)
+    return nums^
 
 fn part_one(input: List[String]) raises -> Int:
-    var parsed = parse(input)
-    var nums = [p.fold() for p in parsed]
+    var nums = parse_nums_one(input)
+    var ops = parse_ops(input)
+
+    var problems = List[Problem]()
+    for i in range(len(ops)):
+        var elements = [n[i] for n in nums]
+        problems.append(Problem(elements^, ops[i]))
+
     var count = 0
-    for n in nums:
-        count += n
+    for p in problems:
+        count += p.fold()
     return count
 
 
 fn part_two(input: List[String]) raises -> Int:
-    return 0
+    var nums = parse_nums_two(input)
+    var ops = parse_ops(input)
+    var problems = List[Problem]()
+    for i, elems in enumerate(nums):
+        problems.append(Problem(elems.copy(), ops[i]))
+
+    var count = 0
+    for p in problems:
+        count += p.fold()
+    return count

@@ -8,8 +8,8 @@ fn main() raises:
     assert_equal(part_one(example.value()), 21)
     assert_equal(part_one(input.value()), 1681)
 
-    # assert_equal(part_two(example.value()), 3263827)
-    # assert_equal(part_two(input.value()), 9608327000261)
+    assert_equal(part_two(example.value()), 40)
+    assert_equal(part_two(input.value()), 422102272495018)
 
 @fieldwise_init
 struct Grid:
@@ -37,7 +37,7 @@ struct Grid:
 
     fn run(mut self):
         for row in range(1, self.height):
-            for col in range(1, self.width):
+            for col in range(self.width):
                 var above_val = self.cells[row - 1][col]
                 if above_val >= 1:
                     if self.cells[row][col] == self.splitter:
@@ -47,10 +47,18 @@ struct Grid:
                     else:
                         self.cells[row][col] += above_val
 
+    fn paths(self) -> Int:
+        var count = 0
+        for i in self.cells[-1]:
+            count += i
+        return count
+
 fn part_one(input: List[String]) raises -> Int:
     var parsed = Grid(input)
     parsed.run()
     return parsed.splitters_hit
 
 fn part_two(input: List[String]) raises -> Int:
-    return 0
+    var parsed = Grid(input)
+    parsed.run()
+    return parsed.paths()

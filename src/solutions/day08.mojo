@@ -17,11 +17,13 @@ struct DSU:
     var parent: List[Int]
     var rank: List[Int]
     var size: List[Int]
+    var num_components: Int
 
     fn __init__(out self, n: Int):
         self.parent = [i for i in range(n)]
         self.rank = [0 for _ in range(n)]
         self.size = [1 for _ in range(n)]
+        self.num_components = n
 
     fn union(mut self, i: Int, j: Int):
         var pi = self.find(i)
@@ -39,6 +41,7 @@ struct DSU:
         self.parent[pj] = pi
         self.size[pi] += self.size[pj]
         self.size[pj] = 0
+        self.num_components -= 1
 
         if self.rank[pi] == self.rank[pj]:
             self.rank[pi] += 1
@@ -48,84 +51,88 @@ struct DSU:
             self.parent[i] = self.find(self.parent[i])
         return self.parent[i]
 
-    fn is_one(self) -> Bool:
-        var elems = len(self.parent)
-        return elems in Set[Int](self.size)
-
-    fn get_size(self) -> List[Int]:
-        return self.size.copy()
-
-@fieldwise_init
+alias Vec3 = SIMD[DType.int, 4]
 struct Point(Copyable, Movable):
-    var x: Int
-    var y: Int
-    var z: Int
+    var vec: Vec3
 
     fn __init__(out self, s: String) raises:
         var parts = s.split(",")
-        assert_equal(len(parts), 3)
-        return Point(
-            x=atol(parts[0]),
-            y=atol(parts[1]),
-            z=atol(parts[2]),
-        )
+        self.vec = Vec3(atol(parts[0]), atol(parts[1]), atol(parts[2]), 0)
 
-    fn distance(self, other: Point) -> Float64:
-        var dx = Float64(self.x - other.x)
-        var dy = Float64(self.y - other.y)
-        var dz = Float64(self.z - other.z)
-        return dx * dx + dy * dy + dz * dz
+    fn x(self) -> Int:
+        return Int(self.vec[0])
 
-@fieldwise_init
-struct Distance(Comparable, Copyable, Movable, Stringable):
-    var i: Int
-    var j: Int
-    var distance: Float64
+    @always_inline
+    fn distance_to(self, other: Point) -> Int:
+        var diff = self.vec - other.vec
+        return Int((diff * diff).reduce_add())
 
-    fn __lt__(self, other: Distance) -> Bool:
-        return self.distance < other.distance
+@register_passable("trivial")
+struct Distance(Comparable):
+    """
+    Bit-packed representation of an edge.
+    Layout: [ Distance (40 bits) | i (12 bits) | j (12 bits) ].
+    """
+    var data: UInt64
 
-    fn __eq__(self, other: Distance) -> Bool:
-        return self.distance == other.distance
+    alias INDEX_MASK = 0xFFF # 12 bits
+    alias INDEX_SHIFT = 12
+    alias DIST_SHIFT = 24
 
-    fn __str__(self) -> String:
-        return "i: " + String(self.i) + ", j: " + String(self.j) + ", distance: " + String(self.distance)
+    @always_inline
+    fn __init__(out self, i: Int, j: Int, dist: Int):
+        self.data = (UInt64(dist) << self.DIST_SHIFT) | (UInt64(i) << self.INDEX_SHIFT) | UInt64(j)
 
-fn sorted_distances(points: List[Point]) -> List[Distance]:
-    var result = List[Distance]()
-    for i in range(len(points)):
-        for j in range(i + 1, len(points)):
-            result.append(Distance(
-                i=i,
-                j=j,
-                distance=points[i].distance(points[j]),
-            ))
+    @always_inline
+    fn i(self) -> Int: 
+        return Int((self.data >> self.INDEX_SHIFT) & self.INDEX_MASK)
+
+    @always_inline
+    fn j(self) -> Int: 
+        return Int(self.data & self.INDEX_MASK)
+
+    @always_inline
+    fn __lt__(self, other: Distance) -> Bool: 
+        return self.data < other.data
+
+    @always_inline
+    fn __eq__(self, other: Distance) -> Bool: 
+        return self.data == other.data
+
+fn get_sorted_distances(points: List[Point]) -> List[Distance]:
+    var n = len(points)
+    var num_pairs = (n * (n - 1)) // 2
+    var result = List[Distance](capacity=num_pairs)
+    for i in range(n):
+        ref p_i = points[i]
+        for j in range(i + 1, n):
+            var d = p_i.distance_to(points[j])
+            result.append(Distance(i, j, d))
     sort(result)
     return result^
 
 fn part_one(input: List[String]) raises -> Int:
-    var points = [Point(s) for s in input]
-    var distances = sorted_distances(points)
-
+    var points = [Point(line) for line in input]
+    var distances = get_sorted_distances(points)
     var dsu = DSU(len(points))
-    for d in distances[:1000]:
-        dsu.union(d.i, d.j)
+    for k in range(1000):
+        var edge = distances[k]
+        dsu.union(edge.i(), edge.j())
 
-    var sizes = dsu.get_size()
-    sort(sizes)
-    return sizes[-1] * sizes[-2] * sizes[-3]
+    sort(dsu.size)
+    return dsu.size[-1] * dsu.size[-2] * dsu.size[-3]
 
 fn part_two(input: List[String]) raises -> Int:
-    var points = [Point(s) for s in input]
-    var distances = sorted_distances(points)
+    var points = [Point(line) for line in input]
+    var distances = get_sorted_distances(points)
     var dsu = DSU(len(points))
-    var idx = 0
-    while not dsu.is_one() and idx < len(distances):
-        ref d = distances[idx]
-        dsu.union(d.i, d.j)
-        idx += 1
+    var last_edge_idx = 0
+    for k in range(len(distances)):
+        var edge = distances[k]
+        dsu.union(edge.i(), edge.j())
+        last_edge_idx = k
+        if k >= 1000 and dsu.num_components == 1:
+            break
 
-    ref last_dist = distances[idx - 1]
-    var first_x = points[last_dist.i].x
-    var second_x = points[last_dist.j].x
-    return first_x * second_x
+    var final_edge = distances[last_edge_idx]
+    return points[final_edge.i()].x() * points[final_edge.j()].x()

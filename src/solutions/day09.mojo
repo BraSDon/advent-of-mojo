@@ -57,7 +57,7 @@ struct Polygon:
         return edges^
 
 
-struct CompressedGrid(Stringable, Movable, Copyable):
+struct CompressedGrid(Movable, Copyable):
     var grid: List[List[Int]]
     var prefix: List[List[Int]]
     var xs: List[Int]
